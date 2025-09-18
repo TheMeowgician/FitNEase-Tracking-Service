@@ -136,23 +136,24 @@ class MLDataController extends Controller
     private function getRatingPreferences($userId)
     {
         return WorkoutRating::where('user_id', $userId)
+            ->join('workouts', 'workout_ratings.workout_id', '=', 'workouts.workout_id')
             ->selectRaw('
-                workout_id,
+                workouts.difficulty_level,
+                workouts.target_muscle_groups,
                 AVG(rating_value) as avg_rating,
-                AVG(enjoyment_rating) as avg_enjoyment,
-                COUNT(*) as rating_count,
-                SUM(CASE WHEN would_recommend = 1 THEN 1 ELSE 0 END) as recommend_count
+                COUNT(*) as rating_count
             ')
-            ->groupBy('workout_id')
-            ->having('rating_count', '>=', 2)
+            ->groupBy(['workouts.difficulty_level', 'workouts.target_muscle_groups'])
             ->get();
     }
 
     private function getExercisePreferences($userId)
     {
         return UserExerciseHistory::where('user_id', $userId)
+            ->join('exercises', 'user_exercise_history.exercise_id', '=', 'exercises.exercise_id')
             ->selectRaw('
-                exercise_id,
+                exercises.target_muscle_group,
+                exercises.difficulty_level,
                 AVG(performance_score) as avg_performance,
                 COUNT(*) as frequency,
                 AVG(CASE WHEN difficulty_perceived = "very_easy" THEN 1
@@ -162,7 +163,7 @@ class MLDataController extends Controller
                          WHEN difficulty_perceived = "very_hard" THEN 5
                          ELSE 3 END) as perceived_difficulty
             ')
-            ->groupBy('exercise_id')
+            ->groupBy(['exercises.target_muscle_group', 'exercises.difficulty_level'])
             ->having('frequency', '>=', 3)
             ->get();
     }

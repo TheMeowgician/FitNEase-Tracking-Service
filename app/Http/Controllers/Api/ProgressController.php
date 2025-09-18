@@ -102,8 +102,8 @@ class ProgressController extends Controller
                     'total_exercise_time_minutes' => $completedSessions->sum('actual_duration_minutes'),
                     'group_activities_count' => $groupSessions->where('is_completed', true)->count(),
                     'average_performance_rating' => $completedSessions->avg('performance_rating'),
-                    'improvement_percentage' => 0, // Would need previous week data
-                    'achievements_earned' => 0 // Would integrate with engagement service
+                    'improvement_percentage' => $this->calculateImprovementPercentage($userId, $weekStart, $weekEnd),
+                    'achievements_earned' => $this->countWeeklyAchievements($userId, $weekStart, $weekEnd)
                 ]
             );
 
@@ -119,6 +119,85 @@ class ProgressController extends Controller
                 'message' => 'Failed to generate weekly summary',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    private function calculateImprovementPercentage($userId, $weekStart, $weekEnd)
+    {
+        try {
+            $currentWeekStart = Carbon::parse($weekStart);
+            $previousWeekStart = $currentWeekStart->copy()->subWeek();
+            $previousWeekEnd = $previousWeekStart->copy()->addDays(6);
+
+            // Get current week performance
+            $currentWeekSessions = WorkoutSession::forUser($userId)
+                ->completed()
+                ->whereBetween('created_at', [$weekStart, $weekEnd])
+                ->get();
+
+            // Get previous week performance
+            $previousWeekSessions = WorkoutSession::forUser($userId)
+                ->completed()
+                ->whereBetween('created_at', [$previousWeekStart, $previousWeekEnd])
+                ->get();
+
+            if ($previousWeekSessions->isEmpty()) {
+                return 0; // No previous data to compare
+            }
+
+            $currentAvgPerformance = $currentWeekSessions->avg('performance_rating') ?: 0;
+            $previousAvgPerformance = $previousWeekSessions->avg('performance_rating') ?: 0;
+
+            if ($previousAvgPerformance == 0) {
+                return 0;
+            }
+
+            $improvement = (($currentAvgPerformance - $previousAvgPerformance) / $previousAvgPerformance) * 100;
+            return round($improvement, 2);
+
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    private function countWeeklyAchievements($userId, $weekStart, $weekEnd)
+    {
+        // This would integrate with the engagement service
+        // For now, we'll calculate basic achievements based on tracking data
+        try {
+            $achievements = 0;
+
+            $sessions = WorkoutSession::forUser($userId)
+                ->completed()
+                ->whereBetween('created_at', [$weekStart, $weekEnd])
+                ->get();
+
+            // Achievement: Completed 3+ workouts this week
+            if ($sessions->count() >= 3) {
+                $achievements++;
+            }
+
+            // Achievement: Consistent performance (avg rating >= 4.0)
+            if ($sessions->avg('performance_rating') >= 4.0) {
+                $achievements++;
+            }
+
+            // Achievement: Burned 1000+ calories this week
+            if ($sessions->sum('calories_burned') >= 1000) {
+                $achievements++;
+            }
+
+            // Achievement: Completed both individual and group sessions
+            $hasIndividual = $sessions->where('session_type', 'individual')->count() > 0;
+            $hasGroup = $sessions->where('session_type', 'group')->count() > 0;
+            if ($hasIndividual && $hasGroup) {
+                $achievements++;
+            }
+
+            return $achievements;
+
+        } catch (\Exception $e) {
+            return 0;
         }
     }
 }
