@@ -75,7 +75,7 @@ class ServiceTestController extends Controller
             }
 
             $user = $request->attributes->get('user');
-            $userId = $user['id'] ?? 1;
+            $userId = $user['user_id'] ?? 1;
 
             $engagementData = [
                 'user_id' => $userId,
@@ -134,7 +134,7 @@ class ServiceTestController extends Controller
             }
 
             $user = $request->attributes->get('user');
-            $userId = $user['id'] ?? 1;
+            $userId = $user['user_id'] ?? 1;
 
             $behavioralData = [
                 'user_id' => $userId,

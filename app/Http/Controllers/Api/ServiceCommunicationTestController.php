@@ -156,7 +156,7 @@ class ServiceCommunicationTestController extends Controller
                 ], 401);
             }
 
-            $userId = $user['id'];
+            $userId = $user['user_id'];
             $workoutId = $request->input('workout_id', 1);
             $exerciseId = $request->input('exercise_id', 1);
 
@@ -247,7 +247,7 @@ class ServiceCommunicationTestController extends Controller
                 ], 401);
             }
 
-            $userId = $user['id'];
+            $userId = $user['user_id'];
             $workflowResults = [];
 
             $exerciseDetails = $this->contentService->getExerciseDetails(1, $token);

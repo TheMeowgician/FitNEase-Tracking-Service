@@ -39,7 +39,7 @@ class ServiceIntegrationDemoController extends Controller
                 ], 401);
             }
 
-            $userId = $user['id'];
+            $userId = $user['user_id'];
             $workoutId = $request->input('workout_id', 1);
 
             $demoFlow = [];
@@ -196,7 +196,7 @@ class ServiceIntegrationDemoController extends Controller
                 ], 401);
             }
 
-            $userId = $user['id'];
+            $userId = $user['user_id'];
             $demoFlow = [];
 
             $recentSessions = WorkoutSession::where('user_id', $userId)
