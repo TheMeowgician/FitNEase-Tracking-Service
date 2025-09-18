@@ -52,7 +52,7 @@ class ServiceCommunicationTestController extends Controller
                     $response = Http::timeout(10)->withHeaders([
                         'Authorization' => 'Bearer ' . $token,
                         'Accept' => 'application/json'
-                    ])->get($serviceUrl . '/health');
+                    ])->get($serviceUrl . '/api/health');
 
                     $connectivity[$serviceName] = [
                         'url' => $serviceUrl,
