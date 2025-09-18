@@ -7,12 +7,19 @@ use App\Models\WorkoutSession;
 use App\Models\WorkoutRating;
 use App\Models\UserExerciseHistory;
 use App\Models\ProgressTracking;
+use App\Services\MLService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use GuzzleHttp\Client;
 
 class MLDataController extends Controller
 {
+    protected MLService $mlService;
+
+    public function __construct(MLService $mlService)
+    {
+        $this->mlService = $mlService;
+    }
     public function getAllUserData(): JsonResponse
     {
         try {
@@ -77,24 +84,22 @@ class MLDataController extends Controller
                 'completion_patterns' => $this->getCompletionPatterns($userId)
             ];
 
-            // Send to ML service
-            $mlServiceUrl = env('ML_SERVICE_URL', 'http://localhost:8001');
-            $client = new Client();
+            $token = $request->bearerToken();
 
-            $response = $client->post($mlServiceUrl . '/api/v1/behavioral-data', [
-                'json' => $behavioralData,
-                'timeout' => 30,
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json'
-                ]
-            ]);
+            $result = $this->mlService->sendUserBehavioralData($behavioralData, $token);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Behavioral data sent to ML service successfully',
-                'ml_response_status' => $response->getStatusCode()
-            ]);
+            if ($result) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Behavioral data sent to ML service successfully',
+                    'ml_response' => $result
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send behavioral data to ML service'
+                ], 503);
+            }
 
         } catch (\Exception $e) {
             return response()->json([

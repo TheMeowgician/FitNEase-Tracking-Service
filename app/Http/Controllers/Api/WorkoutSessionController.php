@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\WorkoutSession;
+use App\Services\ContentService;
+use App\Services\EngagementService;
+use App\Services\MLService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -11,6 +14,19 @@ use Carbon\Carbon;
 
 class WorkoutSessionController extends Controller
 {
+    protected ContentService $contentService;
+    protected EngagementService $engagementService;
+    protected MLService $mlService;
+
+    public function __construct(
+        ContentService $contentService,
+        EngagementService $engagementService,
+        MLService $mlService
+    ) {
+        $this->contentService = $contentService;
+        $this->engagementService = $engagementService;
+        $this->mlService = $mlService;
+    }
     public function store(Request $request): JsonResponse
     {
         try {
@@ -31,6 +47,13 @@ class WorkoutSessionController extends Controller
             ]);
 
             $session = WorkoutSession::create($validated);
+
+            $token = $request->bearerToken();
+            $user = $request->attributes->get('user');
+
+            if ($session->is_completed && $token) {
+                $this->notifyServicesOfCompletion($session, $token, $user);
+            }
 
             return response()->json([
                 'success' => true,
@@ -282,5 +305,49 @@ class WorkoutSessionController extends Controller
         }
 
         return $recommendations;
+    }
+
+    private function notifyServicesOfCompletion($session, $token, $user)
+    {
+        try {
+            $workoutCompletionData = [
+                'user_id' => $session->user_id,
+                'workout_id' => $session->workout_id,
+                'session_id' => $session->id,
+                'completion_percentage' => $session->completion_percentage,
+                'performance_rating' => $session->performance_rating,
+                'calories_burned' => $session->calories_burned,
+                'duration_minutes' => $session->actual_duration_minutes,
+                'completed_at' => $session->updated_at->toISOString()
+            ];
+
+            $this->contentService->notifyWorkoutCompletion($workoutCompletionData, $token);
+
+            $engagementData = [
+                'user_id' => $session->user_id,
+                'event_type' => 'workout_completed',
+                'workout_id' => $session->workout_id,
+                'session_data' => $workoutCompletionData,
+                'timestamp' => now()->toISOString()
+            ];
+
+            $this->engagementService->recordWorkoutEngagement($engagementData, $token);
+
+            $behavioralData = [
+                'user_id' => $session->user_id,
+                'activity_type' => 'workout_completion',
+                'session_metrics' => $workoutCompletionData,
+                'user_profile' => $user,
+                'timestamp' => now()->toISOString()
+            ];
+
+            $this->mlService->sendUserBehavioralData($behavioralData, $token);
+
+        } catch (\Exception $e) {
+            \Log::warning('Failed to notify services of workout completion', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }
