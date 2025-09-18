@@ -59,6 +59,29 @@ Route::get('/health', function () {
     ]);
 });
 
+// Service Communication Testing Routes
+Route::prefix('service-tests')->middleware('auth.api')->group(function () {
+    Route::get('/content', [App\Http\Controllers\Api\ServiceTestController::class, 'testContentService']);
+    Route::get('/engagement', [App\Http\Controllers\Api\ServiceTestController::class, 'testEngagementService']);
+    Route::get('/ml', [App\Http\Controllers\Api\ServiceTestController::class, 'testMLService']);
+    Route::get('/all', [App\Http\Controllers\Api\ServiceTestController::class, 'testAllServices']);
+});
+
+// Service Communication Testing Routes
+Route::prefix('communication-tests')->middleware('auth.api')->group(function () {
+    Route::get('/connectivity', [App\Http\Controllers\Api\ServiceCommunicationTestController::class, 'testServiceConnectivity']);
+    Route::get('/auth-validation', [App\Http\Controllers\Api\ServiceCommunicationTestController::class, 'testAuthTokenValidation']);
+    Route::post('/data-flow', [App\Http\Controllers\Api\ServiceCommunicationTestController::class, 'testDataFlow']);
+    Route::post('/end-to-end', [App\Http\Controllers\Api\ServiceCommunicationTestController::class, 'testEndToEndWorkflow']);
+});
+
+// Service Integration Demonstration Routes
+Route::prefix('integration-demo')->middleware('auth.api')->group(function () {
+    Route::post('/complete-workout', [App\Http\Controllers\Api\ServiceIntegrationDemoController::class, 'demoCompleteWorkoutFlow']);
+    Route::get('/ml-insights', [App\Http\Controllers\Api\ServiceIntegrationDemoController::class, 'demoMLInsightsFlow']);
+    Route::get('/health-check', [App\Http\Controllers\Api\ServiceIntegrationDemoController::class, 'demoServiceHealthCheck']);
+});
+
 // Root health check for Docker
 Route::get('/', function () {
     return response()->json([
