@@ -9,11 +9,11 @@ use App\Http\Controllers\Api\BMIController;
 use App\Http\Controllers\Api\MLDataController;
 
 Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+    return $request->attributes->get('user');
+})->middleware('auth.api');
 
 // Workout Session Management Routes
-Route::prefix('tracking')->group(function () {
+Route::prefix('tracking')->middleware('auth.api')->group(function () {
 
     // Session Management
     Route::post('/workout-session', [WorkoutSessionController::class, 'store']);
