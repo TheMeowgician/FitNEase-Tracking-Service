@@ -23,13 +23,16 @@ class UserExerciseHistory extends Model
         'difficulty_perceived',
         'form_rating',
         'fatigue_level',
-        'completed_at'
+        'completed_at',
+        'came_from_recommendation',
+        'recommendation_session_id'
     ];
 
     protected $casts = [
         'performance_score' => 'decimal:2',
         'form_rating' => 'decimal:2',
-        'completed_at' => 'datetime'
+        'completed_at' => 'datetime',
+        'came_from_recommendation' => 'boolean'
     ];
 
     public function workoutSession()
