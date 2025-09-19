@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\WorkoutRatingController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\BMIController;
 use App\Http\Controllers\Api\MLDataController;
+use App\Http\Controllers\Api\RecommendationTrackingController;
 
 Route::get('/user', function (Request $request) {
     return $request->attributes->get('user');
@@ -47,6 +48,15 @@ Route::prefix('tracking')->middleware('auth.api')->group(function () {
     Route::get('/all-user-data', [MLDataController::class, 'getAllUserData']);
     Route::get('/user-patterns/{userId}', [MLDataController::class, 'getUserPatterns']);
     Route::post('/behavioral-data', [MLDataController::class, 'sendBehavioralData']);
+
+    // Recommendation Tracking
+    Route::post('/recommendations/shown', [RecommendationTrackingController::class, 'trackRecommendationsShown']);
+    Route::post('/recommendations/click', [RecommendationTrackingController::class, 'trackRecommendationClick']);
+    Route::post('/recommendations/completion', [RecommendationTrackingController::class, 'trackRecommendationCompletion']);
+    Route::post('/recommendations/rating', [RecommendationTrackingController::class, 'trackRecommendationRating']);
+    Route::get('/recommendations/analytics/user/{userId}', [RecommendationTrackingController::class, 'getUserRecommendationAnalytics']);
+    Route::get('/recommendations/analytics/session/{sessionId}', [RecommendationTrackingController::class, 'getSessionAnalytics']);
+    Route::get('/recommendations/analytics/overall', [RecommendationTrackingController::class, 'getOverallMetrics']);
 });
 
 // Health check endpoint
