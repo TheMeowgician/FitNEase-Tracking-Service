@@ -22,14 +22,17 @@ class WorkoutRating extends Model
         'enjoyment_rating',
         'would_recommend',
         'feedback_comment',
-        'rated_at'
+        'rated_at',
+        'came_from_recommendation',
+        'recommendation_session_id'
     ];
 
     protected $casts = [
         'rating_value' => 'decimal:2',
         'enjoyment_rating' => 'decimal:2',
         'would_recommend' => 'boolean',
-        'rated_at' => 'datetime'
+        'rated_at' => 'datetime',
+        'came_from_recommendation' => 'boolean'
     ];
 
     public function workoutSession()
