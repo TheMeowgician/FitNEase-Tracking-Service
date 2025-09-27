@@ -45,15 +45,14 @@ class WorkoutRatingsSeeder extends Seeder
 
             $ratings[] = [
                 'user_id' => (int) $data['user_id'],
-                'exercise_id' => (int) $data['exercise_id'],
-                'workout_id' => isset($data['workout_id']) ? (int) $data['workout_id'] : null,
-                'rating' => (int) $data['rating'],
-                'rating_date' => $data['rating_date'],
-                'session_id' => isset($data['session_id']) ? (int) $data['session_id'] : null,
-                'completion_status' => isset($data['completion_status']) ?
-                    ($data['completion_status'] === 'True' || $data['completion_status'] === '1') : null,
-                'difficulty_feedback' => isset($data['difficulty_feedback']) ?
-                    (int) $data['difficulty_feedback'] : null,
+                'workout_id' => isset($data['workout_id']) ? (int) $data['workout_id'] : 1,
+                'session_id' => isset($data['session_id']) ? (int) $data['session_id'] : rand(1000, 9999),
+                'rating_value' => (float) $data['rating'],
+                'difficulty_rating' => $this->mapDifficultyRating($data['difficulty_feedback'] ?? '3'),
+                'enjoyment_rating' => isset($data['rating']) ? (float) $data['rating'] : null,
+                'would_recommend' => isset($data['completion_status']) ?
+                    ($data['completion_status'] === 'True' || $data['completion_status'] === '1') : true,
+                'rated_at' => $data['rating_date'] ?? now(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -76,5 +75,21 @@ class WorkoutRatingsSeeder extends Seeder
         $this->command->info("🎉 Successfully imported {$ratingCount} workout ratings from ML training dataset!");
         $this->command->info("📊 This data enables collaborative filtering recommendations");
         $this->command->info("🤖 ML models can now predict user preferences!");
+    }
+
+    /**
+     * Map difficulty feedback numbers to enum values
+     */
+    private function mapDifficultyRating($feedback): ?string
+    {
+        $rating = (int) $feedback;
+
+        if ($rating <= 2) {
+            return 'too_easy';
+        } elseif ($rating >= 4) {
+            return 'too_hard';
+        } else {
+            return 'just_right';
+        }
     }
 }
