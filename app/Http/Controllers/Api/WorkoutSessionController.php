@@ -7,6 +7,7 @@ use App\Models\WorkoutSession;
 use App\Services\ContentService;
 use App\Services\EngagementService;
 use App\Services\MLService;
+use App\Services\ProgressionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -17,15 +18,18 @@ class WorkoutSessionController extends Controller
     protected ContentService $contentService;
     protected EngagementService $engagementService;
     protected MLService $mlService;
+    protected ProgressionService $progressionService;
 
     public function __construct(
         ContentService $contentService,
         EngagementService $engagementService,
-        MLService $mlService
+        MLService $mlService,
+        ProgressionService $progressionService
     ) {
         $this->contentService = $contentService;
         $this->engagementService = $engagementService;
         $this->mlService = $mlService;
+        $this->progressionService = $progressionService;
     }
     public function store(Request $request): JsonResponse
     {
@@ -342,6 +346,28 @@ class WorkoutSessionController extends Controller
             ];
 
             $this->mlService->sendUserBehavioralData($behavioralData, $token);
+
+            // Update progression metrics
+            $progressionData = [
+                'completed' => $session->is_completed,
+                'duration_minutes' => $session->actual_duration_minutes,
+                'difficulty' => $session->difficulty_level ?? 1, // TODO: Get from workout data
+                'is_group_workout' => $session->session_type === 'group',
+            ];
+
+            $this->progressionService->updateProgressionMetrics($session->user_id, $progressionData);
+
+            // Check for promotion eligibility
+            $eligibility = $this->progressionService->checkPromotionEligibility($session->user_id);
+
+            if ($eligibility['eligible']) {
+                // Auto-promote user
+                $this->progressionService->promoteUser($session->user_id, $eligibility['newLevel']);
+                \Log::info('User auto-promoted', [
+                    'user_id' => $session->user_id,
+                    'new_level' => $eligibility['newLevel']
+                ]);
+            }
 
         } catch (\Exception $e) {
             \Log::warning('Failed to notify services of workout completion', [

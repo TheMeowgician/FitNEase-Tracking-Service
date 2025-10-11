@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\BMIController;
 use App\Http\Controllers\Api\MLDataController;
 use App\Http\Controllers\Api\RecommendationTrackingController;
+use App\Http\Controllers\Api\ProgressionController;
 
 Route::get('/user', function (Request $request) {
     return $request->attributes->get('user');
@@ -57,6 +58,11 @@ Route::prefix('tracking')->middleware('auth.api')->group(function () {
     Route::get('/recommendations/analytics/user/{userId}', [RecommendationTrackingController::class, 'getUserRecommendationAnalytics']);
     Route::get('/recommendations/analytics/session/{sessionId}', [RecommendationTrackingController::class, 'getSessionAnalytics']);
     Route::get('/recommendations/analytics/overall', [RecommendationTrackingController::class, 'getOverallMetrics']);
+
+    // User Progression System
+    Route::get('/progression/check/{userId}', [ProgressionController::class, 'checkEligibility']);
+    Route::get('/progression/progress/{userId}', [ProgressionController::class, 'getProgress']);
+    Route::post('/progression/promote', [ProgressionController::class, 'promoteUser']);
 });
 
 // Health check endpoint
