@@ -119,13 +119,16 @@ class WorkoutSessionController extends Controller
         }
     }
 
-    public function getUserSessions($userId): JsonResponse
+    public function getUserSessions(Request $request, $userId): JsonResponse
     {
         try {
+            // Allow custom per_page parameter, default to 20, max 1000
+            $perPage = min((int) $request->query('per_page', 20), 1000);
+
             $sessions = WorkoutSession::forUser($userId)
                 ->with(['workoutRatings', 'userExerciseHistory'])
                 ->orderBy('created_at', 'desc')
-                ->paginate(20);
+                ->paginate($perPage);
 
             return response()->json([
                 'success' => true,
