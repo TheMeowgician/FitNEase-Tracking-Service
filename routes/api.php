@@ -15,7 +15,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth.api');
 
 // Workout Session Management Routes
-Route::prefix('tracking')->middleware('auth.api')->group(function () {
+Route::prefix('')->middleware('auth.api')->group(function () {
 
     // Session Management
     Route::post('/workout-session', [WorkoutSessionController::class, 'store']);
