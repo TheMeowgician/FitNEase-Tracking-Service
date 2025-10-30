@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\WorkoutSessionController;
 use App\Http\Controllers\Api\WorkoutRatingController;
+use App\Http\Controllers\Api\ExerciseRatingController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\BMIController;
 use App\Http\Controllers\Api\MLDataController;
@@ -28,11 +29,19 @@ Route::prefix('tracking')->middleware('auth.api')->group(function () {
     Route::get('/sessions-by-date/{userId}', [WorkoutSessionController::class, 'getSessionsByDateRange']);
     Route::get('/overtraining-risk/{userId}', [WorkoutSessionController::class, 'checkOvertrainingRisk']);
 
-    // Rating & Feedback
+    // Workout Rating & Feedback
     Route::post('/workout-rating', [WorkoutRatingController::class, 'store']);
     Route::get('/workout-ratings/{userId}', [WorkoutRatingController::class, 'getUserRatings']);
     Route::post('/exercise-feedback', [WorkoutRatingController::class, 'storeExerciseFeedback']);
     Route::get('/rating-stats/{userId}', [WorkoutRatingController::class, 'getRatingStats']);
+
+    // Exercise Ratings (for ML collaborative filtering)
+    Route::post('/exercise-rating', [ExerciseRatingController::class, 'store']);
+    Route::post('/exercise-ratings/batch', [ExerciseRatingController::class, 'storeBatch']);
+    Route::get('/exercise-ratings/{userId}', [ExerciseRatingController::class, 'getUserRatings']);
+    Route::get('/exercise-ratings/exercise/{exerciseId}', [ExerciseRatingController::class, 'getExerciseRatings']);
+    Route::get('/exercise-ratings/stats/{userId}', [ExerciseRatingController::class, 'getRatingStats']);
+    Route::get('/exercise-ratings/session/{sessionId}', [ExerciseRatingController::class, 'getSessionRatings']);
 
     // Progress Analytics
     Route::get('/user-history/{userId}', [ProgressController::class, 'getUserHistory']);
@@ -49,6 +58,11 @@ Route::prefix('tracking')->middleware('auth.api')->group(function () {
     Route::get('/all-user-data', [MLDataController::class, 'getAllUserData']);
     Route::get('/user-patterns/{userId}', [MLDataController::class, 'getUserPatterns']);
     Route::post('/behavioral-data', [MLDataController::class, 'sendBehavioralData']);
+
+    // ML Data - Exercise Ratings (CRITICAL for collaborative filtering)
+    Route::get('/ml-data/exercise-ratings', [MLDataController::class, 'getExerciseRatings']);
+    Route::get('/ml-data/user-ratings/{userId}', [MLDataController::class, 'getUserExerciseRatings']);
+    Route::get('/ml-data/rating-stats', [MLDataController::class, 'getRatingStatistics']);
 
     // Recommendation Tracking
     Route::post('/recommendations/shown', [RecommendationTrackingController::class, 'trackRecommendationsShown']);
