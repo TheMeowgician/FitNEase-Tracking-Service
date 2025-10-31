@@ -89,6 +89,13 @@ Route::get('/health', function () {
     ]);
 });
 
+// ML Internal Endpoints - For ML service internal calls (no auth required)
+Route::prefix('ml-internal')->group(function () {
+    Route::get('/ml-data/exercise-ratings', [MLDataController::class, 'getExerciseRatings']);
+    Route::get('/ml-data/user-ratings/{userId}', [MLDataController::class, 'getUserExerciseRatings']);
+    Route::get('/ml-data/rating-stats', [MLDataController::class, 'getRatingStatistics']);
+});
+
 // Service Communication Testing Routes
 Route::prefix('service-tests')->middleware('auth.api')->group(function () {
     Route::get('/content', [App\Http\Controllers\Api\ServiceTestController::class, 'testContentService']);
