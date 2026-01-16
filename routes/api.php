@@ -28,6 +28,7 @@ Route::prefix('')->middleware('auth.api')->group(function () {
     Route::get('/session-stats/{userId}', [WorkoutSessionController::class, 'getSessionStats']);
     Route::get('/sessions-by-date/{userId}', [WorkoutSessionController::class, 'getSessionsByDateRange']);
     Route::get('/overtraining-risk/{userId}', [WorkoutSessionController::class, 'checkOvertrainingRisk']);
+    Route::get('/group-stats/{groupId}', [WorkoutSessionController::class, 'getGroupStats']);
 
     // Workout Rating & Feedback
     Route::post('/workout-rating', [WorkoutRatingController::class, 'store']);
@@ -94,6 +95,11 @@ Route::prefix('ml-internal')->group(function () {
     Route::get('/ml-data/exercise-ratings', [MLDataController::class, 'getExerciseRatings']);
     Route::get('/ml-data/user-ratings/{userId}', [MLDataController::class, 'getUserExerciseRatings']);
     Route::get('/ml-data/rating-stats', [MLDataController::class, 'getRatingStatistics']);
+});
+
+// Internal Endpoints - For service-to-service calls (no user auth required)
+Route::prefix('internal')->group(function () {
+    Route::get('/group-stats/{groupId}', [WorkoutSessionController::class, 'getGroupStats']);
 });
 
 // Service Communication Testing Routes

@@ -201,6 +201,70 @@ class WorkoutSessionController extends Controller
         }
     }
 
+    /**
+     * Get workout statistics for a specific group
+     */
+    public function getGroupStats($groupId): JsonResponse
+    {
+        try {
+            $groupIdInt = (int) $groupId;
+
+            // Get all completed sessions for this group
+            $groupSessions = WorkoutSession::where('group_id', $groupIdInt)
+                ->where('is_completed', true);
+
+            $totalWorkouts = $groupSessions->count();
+            $totalMinutes = (int) WorkoutSession::where('group_id', $groupIdInt)
+                ->where('is_completed', true)
+                ->sum('actual_duration_minutes');
+            $totalCalories = (int) WorkoutSession::where('group_id', $groupIdInt)
+                ->where('is_completed', true)
+                ->sum('calories_burned');
+
+            // Calculate weekly average (sessions in the last 4 weeks / 4)
+            $fourWeeksAgo = Carbon::now()->subWeeks(4);
+            $recentSessions = WorkoutSession::where('group_id', $groupIdInt)
+                ->where('is_completed', true)
+                ->where('created_at', '>=', $fourWeeksAgo)
+                ->count();
+            $weeklyAverage = round($recentSessions / 4, 1);
+
+            // Get this week's sessions
+            $thisWeekSessions = WorkoutSession::where('group_id', $groupIdInt)
+                ->where('is_completed', true)
+                ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
+                ->count();
+
+            // Get unique participants count
+            $uniqueParticipants = WorkoutSession::where('group_id', $groupIdInt)
+                ->where('is_completed', true)
+                ->distinct('user_id')
+                ->count('user_id');
+
+            $stats = [
+                'total_workouts' => $totalWorkouts,
+                'total_minutes' => $totalMinutes,
+                'total_calories' => $totalCalories,
+                'weekly_average' => $weeklyAverage,
+                'this_week_sessions' => $thisWeekSessions,
+                'unique_participants' => $uniqueParticipants,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Group statistics retrieved successfully',
+                'data' => $stats
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve group statistics',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getSessionsByDateRange(Request $request, $userId): JsonResponse
     {
         try {
