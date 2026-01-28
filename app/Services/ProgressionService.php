@@ -56,13 +56,42 @@ class ProgressionService
             $targetLevel = $this->getNextLevel($currentLevel);
 
             if (!$targetLevel) {
-                // Already at max level
+                // Already at max level - but still show their workout stats
+                $completedWorkouts = $user['total_workouts_completed'] ?? 0;
+                $workoutMinutes = $user['total_workout_minutes'] ?? 0;
+                $activeDays = $user['active_days'] ?? 0;
+                $weeksActive = min(ceil($activeDays / 7), 52);
+                $longestStreak = $user['longest_streak_days'] ?? 0;
+                $groupWorkouts = $user['group_workouts_count'] ?? 0;
+                $goalsAchieved = $user['goals_achieved_count'] ?? 0;
+
                 return [
                     'eligible' => false,
                     'newLevel' => null,
                     'score' => 0,
-                    'message' => 'Already at maximum fitness level',
-                    'requirements' => []
+                    'threshold' => 0,
+                    'message' => 'Congratulations! You have reached the maximum fitness level!',
+                    'requirements' => [
+                        'min_days' => 0,
+                        'current_days' => $activeDays,
+                        'meets_time_requirement' => true,
+                        'meets_score_requirement' => true,
+                        'completed_workouts' => $completedWorkouts,
+                        'workout_minutes' => $workoutMinutes,
+                        'weeks_active' => $weeksActive,
+                        'longest_streak' => $longestStreak,
+                        'group_workouts' => $groupWorkouts,
+                        'goals_achieved' => $goalsAchieved,
+                    ],
+                    'breakdown' => [
+                        'workouts_points' => $completedWorkouts,
+                        'minutes_points' => $workoutMinutes,
+                        'completion_rate_points' => 100,
+                        'weeks_active_points' => $weeksActive,
+                        'streak_points' => $longestStreak,
+                        'group_workouts_points' => $groupWorkouts,
+                        'goals_achieved_points' => $goalsAchieved,
+                    ],
                 ];
             }
 
