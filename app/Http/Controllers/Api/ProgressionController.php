@@ -95,7 +95,10 @@ class ProgressionController extends Controller
         $requirements = $eligibility['requirements'] ?? [];
         $minDays = $requirements['min_days'] ?? 1;
         $currentDays = $requirements['current_days'] ?? 0;
-        $timeProgress = min(round(($currentDays / $minDays) * 100, 1), 100);
+        // For max-level users, minDays is 0 - treat as 100% progress
+        $timeProgress = $minDays > 0
+            ? min(round(($currentDays / $minDays) * 100, 1), 100)
+            : 100;
 
         // Overall progress is the MINIMUM of both (both must be 100% to promote)
         $overallProgress = min($scoreProgress, $timeProgress);
