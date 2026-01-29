@@ -100,6 +100,7 @@ Route::prefix('ml-internal')->group(function () {
 // Internal Endpoints - For service-to-service calls (no user auth required)
 Route::prefix('internal')->group(function () {
     Route::get('/group-stats/{groupId}', [WorkoutSessionController::class, 'getGroupStats']);
+    Route::get('/users/{userId}/stats', [WorkoutSessionController::class, 'getSessionStats']);
 });
 
 // Service Communication Testing Routes
