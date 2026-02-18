@@ -95,6 +95,7 @@ Route::prefix('ml-internal')->group(function () {
     Route::get('/ml-data/exercise-ratings', [MLDataController::class, 'getExerciseRatings']);
     Route::get('/ml-data/user-ratings/{userId}', [MLDataController::class, 'getUserExerciseRatings']);
     Route::get('/ml-data/rating-stats', [MLDataController::class, 'getRatingStatistics']);
+    Route::get('/user-sessions/{userId}', [WorkoutSessionController::class, 'getUserSessions']);
 });
 
 // Internal Endpoints - For service-to-service calls (no user auth required)
