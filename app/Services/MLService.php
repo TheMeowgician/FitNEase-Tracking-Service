@@ -23,7 +23,7 @@ class MLService
                 'ml_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(60)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'
@@ -69,7 +69,7 @@ class MLService
 
             $queryParams = array_merge(['user_id' => $userId], $parameters);
 
-            $response = Http::timeout(60)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'
@@ -117,7 +117,7 @@ class MLService
                 'ml_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(60)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'
@@ -163,7 +163,7 @@ class MLService
                 'ml_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(60)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'
@@ -211,7 +211,7 @@ class MLService
                 'ml_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(60)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'
@@ -258,7 +258,7 @@ class MLService
                 'ml_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(60)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'

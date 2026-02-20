@@ -23,7 +23,7 @@ class EngagementService
                 'engagement_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(30)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'
@@ -68,7 +68,7 @@ class EngagementService
                 'engagement_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(30)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'
@@ -114,7 +114,7 @@ class EngagementService
                 'engagement_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(30)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'
@@ -160,7 +160,7 @@ class EngagementService
                 'engagement_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(30)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'
@@ -205,7 +205,7 @@ class EngagementService
                 'engagement_service_url' => $this->baseUrl
             ]);
 
-            $response = Http::timeout(30)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json'

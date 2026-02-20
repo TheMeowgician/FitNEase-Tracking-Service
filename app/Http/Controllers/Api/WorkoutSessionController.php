@@ -168,22 +168,36 @@ class WorkoutSessionController extends Controller
     public function getSessionStats($userId): JsonResponse
     {
         try {
+            $weekStart = Carbon::now()->startOfWeek();
+            $weekEnd = Carbon::now()->endOfWeek();
+            $monthStart = Carbon::now()->startOfMonth();
+            $monthEnd = Carbon::now()->endOfMonth();
+
+            // Single query instead of 9 separate queries
+            $result = WorkoutSession::forUser($userId)
+                ->selectRaw("
+                    COUNT(*) as total_sessions,
+                    SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END) as completed_sessions,
+                    SUM(CASE WHEN is_completed = 1 THEN COALESCE(calories_burned, 0) ELSE 0 END) as total_calories_burned,
+                    SUM(CASE WHEN is_completed = 1 THEN COALESCE(actual_duration_minutes, 0) ELSE 0 END) as total_exercise_time,
+                    AVG(CASE WHEN is_completed = 1 THEN performance_rating ELSE NULL END) as average_performance_rating,
+                    SUM(CASE WHEN is_completed = 1 AND session_type = 'group' THEN 1 ELSE 0 END) as group_sessions_count,
+                    SUM(CASE WHEN is_completed = 1 AND session_type = 'individual' THEN 1 ELSE 0 END) as individual_sessions_count,
+                    SUM(CASE WHEN is_completed = 1 AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as this_week_sessions,
+                    SUM(CASE WHEN is_completed = 1 AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as this_month_sessions
+                ", [$weekStart, $weekEnd, $monthStart, $monthEnd])
+                ->first();
+
             $stats = [
-                'total_sessions' => WorkoutSession::forUser($userId)->count(),
-                'completed_sessions' => WorkoutSession::forUser($userId)->completed()->count(),
-                'total_calories_burned' => WorkoutSession::forUser($userId)->completed()->sum('calories_burned'),
-                'total_exercise_time' => WorkoutSession::forUser($userId)->completed()->sum('actual_duration_minutes'),
-                'average_performance_rating' => WorkoutSession::forUser($userId)->completed()->avg('performance_rating'),
-                'group_sessions_count' => WorkoutSession::forUser($userId)->groupSessions()->completed()->count(),
-                'individual_sessions_count' => WorkoutSession::forUser($userId)->individualSessions()->completed()->count(),
-                'this_week_sessions' => WorkoutSession::forUser($userId)
-                    ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
-                    ->completed()
-                    ->count(),
-                'this_month_sessions' => WorkoutSession::forUser($userId)
-                    ->whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])
-                    ->completed()
-                    ->count()
+                'total_sessions' => (int) $result->total_sessions,
+                'completed_sessions' => (int) $result->completed_sessions,
+                'total_calories_burned' => (int) $result->total_calories_burned,
+                'total_exercise_time' => (int) $result->total_exercise_time,
+                'average_performance_rating' => $result->average_performance_rating ? round((float) $result->average_performance_rating, 2) : null,
+                'group_sessions_count' => (int) $result->group_sessions_count,
+                'individual_sessions_count' => (int) $result->individual_sessions_count,
+                'this_week_sessions' => (int) $result->this_week_sessions,
+                'this_month_sessions' => (int) $result->this_month_sessions,
             ];
 
             return response()->json([
@@ -208,46 +222,30 @@ class WorkoutSessionController extends Controller
     {
         try {
             $groupIdInt = (int) $groupId;
-
-            // Get all completed sessions for this group
-            $groupSessions = WorkoutSession::where('group_id', $groupIdInt)
-                ->where('is_completed', true);
-
-            $totalWorkouts = $groupSessions->count();
-            $totalMinutes = (int) WorkoutSession::where('group_id', $groupIdInt)
-                ->where('is_completed', true)
-                ->sum('actual_duration_minutes');
-            $totalCalories = (int) WorkoutSession::where('group_id', $groupIdInt)
-                ->where('is_completed', true)
-                ->sum('calories_burned');
-
-            // Calculate weekly average (sessions in the last 4 weeks / 4)
             $fourWeeksAgo = Carbon::now()->subWeeks(4);
-            $recentSessions = WorkoutSession::where('group_id', $groupIdInt)
-                ->where('is_completed', true)
-                ->where('created_at', '>=', $fourWeeksAgo)
-                ->count();
-            $weeklyAverage = round($recentSessions / 4, 1);
+            $weekStart = Carbon::now()->startOfWeek();
+            $weekEnd = Carbon::now()->endOfWeek();
 
-            // Get this week's sessions
-            $thisWeekSessions = WorkoutSession::where('group_id', $groupIdInt)
+            // Single query instead of 6 separate queries
+            $result = WorkoutSession::where('group_id', $groupIdInt)
                 ->where('is_completed', true)
-                ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
-                ->count();
-
-            // Get unique participants count
-            $uniqueParticipants = WorkoutSession::where('group_id', $groupIdInt)
-                ->where('is_completed', true)
-                ->distinct('user_id')
-                ->count('user_id');
+                ->selectRaw("
+                    COUNT(*) as total_workouts,
+                    COALESCE(SUM(actual_duration_minutes), 0) as total_minutes,
+                    COALESCE(SUM(calories_burned), 0) as total_calories,
+                    SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as recent_sessions,
+                    SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as this_week_sessions,
+                    COUNT(DISTINCT user_id) as unique_participants
+                ", [$fourWeeksAgo, $weekStart, $weekEnd])
+                ->first();
 
             $stats = [
-                'total_workouts' => $totalWorkouts,
-                'total_minutes' => $totalMinutes,
-                'total_calories' => $totalCalories,
-                'weekly_average' => $weeklyAverage,
-                'this_week_sessions' => $thisWeekSessions,
-                'unique_participants' => $uniqueParticipants,
+                'total_workouts' => (int) $result->total_workouts,
+                'total_minutes' => (int) $result->total_minutes,
+                'total_calories' => (int) $result->total_calories,
+                'weekly_average' => round((int) $result->recent_sessions / 4, 1),
+                'this_week_sessions' => (int) $result->this_week_sessions,
+                'unique_participants' => (int) $result->unique_participants,
             ];
 
             return response()->json([
@@ -380,20 +378,27 @@ class WorkoutSessionController extends Controller
 
     private function notifyServicesOfCompletion($session, $token, $user)
     {
+        $workoutCompletionData = [
+            'user_id' => $session->user_id,
+            'workout_id' => $session->workout_id,
+            'session_id' => $session->id,
+            'completion_percentage' => $session->completion_percentage,
+            'performance_rating' => $session->performance_rating,
+            'calories_burned' => $session->calories_burned,
+            'duration_minutes' => $session->actual_duration_minutes,
+            'completed_at' => $session->updated_at->toISOString()
+        ];
+
+        // Non-critical notifications: fire with short timeouts, don't block user
+        // Content service notification
         try {
-            $workoutCompletionData = [
-                'user_id' => $session->user_id,
-                'workout_id' => $session->workout_id,
-                'session_id' => $session->id,
-                'completion_percentage' => $session->completion_percentage,
-                'performance_rating' => $session->performance_rating,
-                'calories_burned' => $session->calories_burned,
-                'duration_minutes' => $session->actual_duration_minutes,
-                'completed_at' => $session->updated_at->toISOString()
-            ];
-
             $this->contentService->notifyWorkoutCompletion($workoutCompletionData, $token);
+        } catch (\Exception $e) {
+            \Log::warning('Content notification failed (non-blocking)', ['error' => $e->getMessage()]);
+        }
 
+        // Engagement service notification
+        try {
             $engagementData = [
                 'user_id' => $session->user_id,
                 'event_type' => 'workout_completed',
@@ -401,9 +406,13 @@ class WorkoutSessionController extends Controller
                 'session_data' => $workoutCompletionData,
                 'timestamp' => now()->toISOString()
             ];
-
             $this->engagementService->recordWorkoutEngagement($engagementData, $token);
+        } catch (\Exception $e) {
+            \Log::warning('Engagement notification failed (non-blocking)', ['error' => $e->getMessage()]);
+        }
 
+        // ML behavioral data: least critical, skip if slow
+        try {
             $behavioralData = [
                 'user_id' => $session->user_id,
                 'activity_type' => 'workout_completion',
@@ -411,36 +420,31 @@ class WorkoutSessionController extends Controller
                 'user_profile' => $user,
                 'timestamp' => now()->toISOString()
             ];
-
             $this->mlService->sendUserBehavioralData($behavioralData, $token);
+        } catch (\Exception $e) {
+            \Log::warning('ML notification failed (non-blocking)', ['error' => $e->getMessage()]);
+        }
 
-            // Update progression metrics
+        // Progression: critical for user experience (level-ups)
+        try {
             $progressionData = [
                 'completed' => $session->is_completed,
                 'duration_minutes' => $session->actual_duration_minutes,
-                'difficulty' => $session->difficulty_level ?? 1, // TODO: Get from workout data
+                'difficulty' => $session->difficulty_level ?? 1,
                 'is_group_workout' => $session->session_type === 'group',
             ];
-
             $this->progressionService->updateProgressionMetrics($session->user_id, $progressionData);
 
-            // Check for promotion eligibility
             $eligibility = $this->progressionService->checkPromotionEligibility($session->user_id);
-
             if ($eligibility['eligible']) {
-                // Auto-promote user
                 $this->progressionService->promoteUser($session->user_id, $eligibility['newLevel']);
                 \Log::info('User auto-promoted', [
                     'user_id' => $session->user_id,
                     'new_level' => $eligibility['newLevel']
                 ]);
             }
-
         } catch (\Exception $e) {
-            \Log::warning('Failed to notify services of workout completion', [
-                'session_id' => $session->id,
-                'error' => $e->getMessage()
-            ]);
+            \Log::warning('Progression notification failed', ['error' => $e->getMessage()]);
         }
     }
 }
