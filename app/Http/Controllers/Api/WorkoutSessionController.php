@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\WorkoutSession;
+use App\Models\UserExerciseHistory;
 use App\Services\ContentService;
 use App\Services\EngagementService;
 use App\Services\MLService;
@@ -47,10 +48,31 @@ class WorkoutSessionController extends Controller
                 'calories_burned' => 'nullable|numeric|min:0',
                 'performance_rating' => 'nullable|numeric|between:1,5',
                 'user_notes' => 'nullable|string|max:1000',
-                'heart_rate_avg' => 'nullable|integer|min:50|max:250'
+                'heart_rate_avg' => 'nullable|integer|min:50|max:250',
+                'exercises' => 'nullable|array',
+                'exercises.*.exercise_id' => 'required_with:exercises|integer',
+                'exercises.*.exercise_name' => 'required_with:exercises|string|max:255',
+                'exercises.*.target_muscle_group' => 'nullable|string|max:255',
             ]);
 
+            // Separate exercises from session data before creating
+            $exercises = $validated['exercises'] ?? [];
+            unset($validated['exercises']);
+
             $session = WorkoutSession::create($validated);
+
+            // Save exercises to user_exercise_history
+            if (!empty($exercises)) {
+                foreach ($exercises as $exercise) {
+                    UserExerciseHistory::create([
+                        'user_id' => $session->user_id,
+                        'exercise_id' => $exercise['exercise_id'],
+                        'exercise_name' => $exercise['exercise_name'],
+                        'session_id' => $session->session_id,
+                        'completed_at' => now(),
+                    ]);
+                }
+            }
 
             $token = $request->bearerToken();
             $user = $request->attributes->get('user');

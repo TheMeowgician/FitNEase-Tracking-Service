@@ -16,6 +16,7 @@ class UserExerciseHistory extends Model
     protected $fillable = [
         'user_id',
         'exercise_id',
+        'exercise_name',
         'session_id',
         'completed_repetitions',
         'completed_duration_seconds',
