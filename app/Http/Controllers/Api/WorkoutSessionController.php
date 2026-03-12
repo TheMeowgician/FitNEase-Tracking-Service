@@ -167,6 +167,42 @@ class WorkoutSessionController extends Controller
         }
     }
 
+    /**
+     * Get unique exercise IDs completed by a user in the last N days.
+     * Used by planning service to prevent exercise repetition across weeks.
+     */
+    public function getRecentExerciseIds(Request $request, $userId): JsonResponse
+    {
+        try {
+            $days = (int) $request->query('days', 7);
+            $days = max(1, min($days, 30)); // Clamp to 1-30 days
+
+            $startDate = Carbon::now()->subDays($days)->startOfDay();
+
+            $exerciseIds = UserExerciseHistory::forUser($userId)
+                ->where('completed_at', '>=', $startDate)
+                ->distinct()
+                ->pluck('exercise_id')
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'user_id' => (int) $userId,
+                    'days' => $days,
+                    'exercise_ids' => $exerciseIds,
+                    'count' => count($exerciseIds),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve recent exercises',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function destroy($sessionId): JsonResponse
     {
         try {

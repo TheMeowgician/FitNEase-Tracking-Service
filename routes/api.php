@@ -102,6 +102,7 @@ Route::prefix('ml-internal')->group(function () {
 Route::prefix('internal')->group(function () {
     Route::get('/group-stats/{groupId}', [WorkoutSessionController::class, 'getGroupStats']);
     Route::get('/users/{userId}/stats', [WorkoutSessionController::class, 'getSessionStats']);
+    Route::get('/users/{userId}/recent-exercises', [WorkoutSessionController::class, 'getRecentExerciseIds']);
 });
 
 // Service Communication Testing Routes
