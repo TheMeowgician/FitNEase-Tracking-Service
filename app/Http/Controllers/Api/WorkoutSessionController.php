@@ -53,6 +53,7 @@ class WorkoutSessionController extends Controller
                 'exercises.*.exercise_id' => 'required_with:exercises|integer',
                 'exercises.*.exercise_name' => 'required_with:exercises|string|max:255',
                 'exercises.*.target_muscle_group' => 'nullable|string|max:255',
+                'exercises.*.completed' => 'nullable|boolean',
             ]);
 
             // Separate exercises from session data before creating
@@ -69,7 +70,7 @@ class WorkoutSessionController extends Controller
                         'exercise_id' => $exercise['exercise_id'],
                         'exercise_name' => $exercise['exercise_name'],
                         'session_id' => $session->session_id,
-                        'completed_at' => now(),
+                        'completed_at' => ($exercise['completed'] ?? true) ? now() : null,
                     ]);
                 }
             }
