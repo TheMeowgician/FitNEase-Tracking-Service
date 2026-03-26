@@ -322,6 +322,55 @@ class WorkoutSessionController extends Controller
         }
     }
 
+    /**
+     * Get participants (user_ids) of a specific group workout session
+     */
+    public function getGroupSessionParticipants(Request $request, $groupId): JsonResponse
+    {
+        try {
+            $groupIdInt = (int) $groupId;
+            $date = $request->query('date'); // Optional: filter by date (Y-m-d)
+
+            $query = WorkoutSession::where('group_id', $groupIdInt)
+                ->where('session_type', 'group');
+
+            // If date provided, filter to that specific day
+            if ($date) {
+                $query->whereDate('created_at', $date);
+            }
+
+            $sessions = $query->select('session_id', 'user_id', 'is_completed', 'actual_duration_minutes', 'calories_burned', 'completion_percentage', 'created_at')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Group by user_id to get unique participants
+            $participants = $sessions->groupBy('user_id')->map(function ($userSessions) {
+                $latest = $userSessions->first();
+                return [
+                    'user_id' => (int) $latest->user_id,
+                    'is_completed' => (bool) $latest->is_completed,
+                    'duration_minutes' => (int) ($latest->actual_duration_minutes ?? 0),
+                    'calories_burned' => (float) ($latest->calories_burned ?? 0),
+                    'completion_percentage' => (float) ($latest->completion_percentage ?? 0),
+                    'session_date' => $latest->created_at->toISOString(),
+                ];
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $participants,
+                'count' => $participants->count(),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve group session participants',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getSessionsByDateRange(Request $request, $userId): JsonResponse
     {
         try {

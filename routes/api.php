@@ -29,6 +29,7 @@ Route::prefix('')->middleware('auth.api')->group(function () {
     Route::get('/sessions-by-date/{userId}', [WorkoutSessionController::class, 'getSessionsByDateRange']);
     Route::get('/overtraining-risk/{userId}', [WorkoutSessionController::class, 'checkOvertrainingRisk']);
     Route::get('/group-stats/{groupId}', [WorkoutSessionController::class, 'getGroupStats']);
+    Route::get('/group-session-participants/{groupId}', [WorkoutSessionController::class, 'getGroupSessionParticipants']);
 
     // Workout Rating & Feedback
     Route::post('/workout-rating', [WorkoutRatingController::class, 'store']);
